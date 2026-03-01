@@ -1,7 +1,13 @@
 import RPG_funct as funct
 import random # Lets me generate random numbers
 import time # Lets me check time
+from dotenv import load_dotenv
+import os
 
+load_dotenv()  # reads .env file
+DEV_CODE = os.getenv("KYROS_DEV_CODE")
+if DEV_CODE is None:
+    DEV_CODE = "IMPOSSIBLE-DEV-CODE-7x9zq2k8p"
 TextMode = None
 Text = None
 Random = ""
@@ -125,8 +131,13 @@ while True:
   "").lower()
   if Location == "money":
     if Name == "Jacob":
-        Code = input("Enter the dev code. ")
-        if Code == "kyros":
+        Code = input("Enter the dev code. ").strip()
+        if not Code:  # catches empty input or just spaces/enter
+            print("No code entered. Access denied.")
+            print("YoU BRouGht ThiS UpoN YouRseLF.")
+            TextMode = True
+            funct.Pause(3)
+        elif Code == DEV_CODE:
           Gold += 1000
           print(" + 1000 gold!")
           print(f"Your current balance is {Gold} gold.")
@@ -202,7 +213,7 @@ while True:
           if Health < MaxHealth:
             print("Visit the tavern to regain health before heading out again.")
           break
-        MonsterTotalDmgDealt, Health = funct.PerformAttack(
+        (MonsterTotalDmgDealt, Health) = funct.PerformAttack(
                                                         SlimeStats["SlimeAtkPwr"],
                                                         Defense,
                                                         Health
@@ -272,9 +283,9 @@ while True:
         Gold, Inventory = funct.BlacksmithShopElya(Gold, Inventory, Choice)
 
   elif Location == "t":
-    Gold, AtkPwr, Defense, BuffActive, BuffEndTime, Health,
+    (Gold, AtkPwr, Defense, BuffActive, BuffEndTime, Health,
     MaxHealth, HealthRegenMultiplier, Mana, MaxMana, ManaRegenMultiplier,
-    Inventory = funct.TavernElya(Gold, Choice, Inventory, MaxHealth, Health,
+    Inventory) = funct.TavernElya(Gold, Choice, Inventory, MaxHealth, Health,
     HealthRegenMultiplier, MaxMana, Mana, ManaRegenMultiplier, AtkPwr, Defense,
     BuffActive, BuffEndTime, TextMode)
 
@@ -333,9 +344,9 @@ while True:
         else:
           print("Please enter yes or no.")
   elif Location == "i":
-    Inventory, Equipped, AtkPwr, Defense, MaxMana, Mana,
+    (Inventory, Equipped, AtkPwr, Defense, MaxMana, Mana,
     ManaRegenMultiplier, Health, MaxHealth, HealthRegenMultiplier, BuffActive,
-    BuffEndTime, Equipped = funct.InventoryMenu(Idx, Choice, Inventory, Equipped,
+    BuffEndTime, Equipped) = funct.InventoryMenu(Idx, Choice, Inventory, Equipped,
     MaxMana, Mana, ManaRegenMultiplier, Health, MaxHealth, HealthRegenMultiplier,
     AtkPwr, Defense, BuffActive, BuffEndTime, Consumables, UnlockorCraft)
 
