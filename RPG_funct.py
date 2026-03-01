@@ -1,5 +1,12 @@
 import time
 import random
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # reads .env file
+DEV_CODE = os.getenv("KYROS_DEV_CODE")
+if DEV_CODE is None:
+    DEV_CODE = "IMPOSSIBLE-DEV-CODE-7x9zq2k8p"
 
 
 def CalcSellPrice(item, BasePrice, ShopStock):
@@ -113,7 +120,7 @@ def FishAndChipsTavern(Gold, AtkPwr, Defense, BuffActive, BuffEndTime, Choice, I
     print(GamePrint(" - 10 Gold", TextMode))
     print(GamePrint(f"Your new balance is {Gold} Gold.", TextMode))
     while True:
-      Choice = GameInput("Would you like the Fish and Chips here or to go? h/t ").lower()
+      Choice = GameInput("Would you like the Fish and Chips here or to go? h/t ", TextMode).lower()
       if Choice == "h":
         Defense += 2
         AtkPwr += 2
@@ -165,7 +172,7 @@ def BreadTavern(Gold, Mana, MaxMana, Choice, Inventory, TextMode):
   print(GamePrint(" - 5 Gold", TextMode))
   print(GamePrint(f"Your new balance is {Gold} Gold.", TextMode))
   while True:
-    Choice = GameInput("Would you like the Bread here or to go? h/t ").lower()
+    Choice = GameInput("Would you like the Bread here or to go? h/t ", TextMode).lower()
     if Choice == "h":
       print(GamePrint("The warm bread falls to your stomach, filling you up.", TextMode))
       print(GamePrint(f" + {MaxMana - Mana} Mana", TextMode))
@@ -187,7 +194,7 @@ def BroccoliCheddarSoupTavern(Gold, HealthRegenMultiplier, Choice, Inventory, Te
   print(GamePrint(" - 15 Gold", TextMode))
   print(GamePrint(f"Your new balance is {Gold} Gold.", TextMode))
   while True:
-    Choice = GameInput("Would you like the Broccoli Cheddar Soup here or to go? h/t ").lower()
+    Choice = GameInput("Would you like the Broccoli Cheddar Soup here or to go? h/t ", TextMode).lower()
     if Choice == "h":
       HealthRegenMultiplier += 0.1
       print(GamePrint(" + 10% Health Regen", TextMode))
@@ -206,7 +213,7 @@ def ButterbeerTavern(Gold, ManaRegenMultiplier, Choice, Inventory, TextMode):
   print(GamePrint(" - 15 Gold", TextMode))
   print(GamePrint(f"Your new balance is {Gold} Gold.", TextMode))
   while True:
-    Choice = GameInput("Would you like the Butterbeer here or to go? h/t ").lower()
+    Choice = GameInput("Would you like the Butterbeer here or to go? h/t ", TextMode).lower()
     if Choice == "h":
       ManaRegenMultiplier += 0.1
       print(GamePrint(" + 10% Mana Regen", TextMode))
@@ -226,7 +233,7 @@ def PhoenixTearsTavern(Gold, Health, MaxHealth, Choice, Inventory, PhoenixPrice,
   print(GamePrint(f" - {PhoenixPrice} Gold", TextMode))
   print(GamePrint(f"Your new balance is {Gold} Gold.", TextMode))
   while True:
-    Choice = GameInput("Would you like the Phoenix tears here or to go? h/t ").lower()
+    Choice = GameInput("Would you like the Phoenix tears here or to go? h/t ", TextMode).lower()
     if Choice == "h":
       print(GamePrint(f" + {MaxHealth - Health} Health", TextMode))
       Health = MaxHealth
@@ -249,7 +256,7 @@ def SagesSecretStewTavern(Gold, Mana, MaxMana, Choice, Inventory, SagePrice, Tex
   print(GamePrint(f"Your new balance is {Gold} Gold.",  TextMode))
   while True:
     Choice = GameInput("Would you like the Sage's Secret Stew here or to go? " +
-    "h/t ").lower()
+    "h/t ", TextMode).lower()
     if Choice == "h":
       print(GamePrint(f" + {MaxMana - Mana} Mana", TextMode))
       Mana = MaxMana
@@ -272,10 +279,10 @@ BuffActive, BuffEndTime, Consumables, UnlockorCraft, TextMode):
   while True:
     print(GamePrint("  INVENTORY MENU", TextMode))
     print(GamePrint("=", TextMode) * 20)
-    print(GameInput("1. Equip/Use", TextMode))
-    print(GameInput("2. Unequip", TextMode))
+    print(GamePrint("1. Equip/Use", TextMode))
+    print(GamePrint("2. Unequip", TextMode))
     print(GamePrint("3. Exit to previous menu", TextMode))
-    Choice = GameInput("Choose an action. ")
+    Choice = GameInput("Choose an action. ", TextMode)
     if Choice == "1":
       if not Inventory:
         print(GamePrint("You have nothing to Equip or use.", TextMode))
@@ -284,7 +291,7 @@ BuffActive, BuffEndTime, Consumables, UnlockorCraft, TextMode):
         for i, item in enumerate(Inventory):
           print(GamePrint(f"{i + 1}. {item}", TextMode))
         print(GamePrint(f"{len(Inventory) + 1}. Exit to previous menu", TextMode))
-        Choice = GameInput("Please select a number. ")
+        Choice = GameInput("Please select a number. ", TextMode)
         if Choice.isdigit():
           Idx = int(Choice) - 1
           if 0 <= Idx < len(Inventory):
@@ -731,8 +738,13 @@ def ShopElya(Gold, Inventory, Choice, Idx, Name, ShopStock, BasePrice, item, Tex
           Pause(3)
           TextMode = True
         else:
-            Code = GameInput("Please enter the dev code. ", TextMode)
-            if Code == "kyros":
+            Code = GameInput("Please enter the dev code. ", TextMode).strip()
+            if not Code:  # catches empty input or just spaces/enter
+                print("No code entered. Access denied.")
+                print("YoU BRouGht ThiS UpoN YouRseLF.")
+                TextMode = True
+                Pause(3)
+            elif Code == DEV_CODE:
                 if Gold < 1000:
                     print(GamePrint(f"To buy this, you need {1000 - Gold} more Gold."))
                 else:
@@ -746,7 +758,7 @@ def ShopElya(Gold, Inventory, Choice, Idx, Name, ShopStock, BasePrice, item, Tex
                 print("You are not a dev.")
                 print("YoU BRouGht ThiS UpoN YouRseLF.")
                 TextMode = True
-                Pause(3)
+                Pause
       elif Choice == "5":
         while True:
           print(GamePrint("----INVENTORY----", TextMode))
