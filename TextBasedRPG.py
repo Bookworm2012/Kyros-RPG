@@ -4,10 +4,8 @@ import time # Lets me check time
 from dotenv import load_dotenv
 import os
 
-load_dotenv()  # reads .env file
+load_dotenv()
 DEV_CODE = os.getenv("KYROS_DEV_CODE")
-if DEV_CODE is None:
-    DEV_CODE = "IMPOSSIBLE-DEV-CODE-7x9zq2k8p"
 TextMode = None
 Text = None
 Random = ""
@@ -130,27 +128,33 @@ while True:
   Location = input("Where would you like to go? Just input the letter " +
   "").lower()
   if Location == "money":
-    if Name == "Jacob":
-        Code = input("Enter the dev code. ").strip()
-        if not Code:  # catches empty input or just spaces/enter
-            print("No code entered. Access denied.")
+    if DEV_CODE is not None:
+        if Name == "Jacob":
+            Code = input("Enter the dev code. ").strip()
+            if not Code:  # catches empty input or just spaces/enter
+                print("No code entered. Access denied.")
+                print("YoU BRouGht ThiS UpoN YouRseLF.")
+                TextMode = True
+                funct.Pause(3)
+            elif Code == DEV_CODE:
+                Gold += 1000
+                print(" + 1000 gold!")
+                print(f"Your current balance is {Gold} gold.")
+            else:
+                print("You are not a dev.")
+                print("YoU BRouGht ThiS UpoN YouRseLF.")
+                TextMode = True
+                funct.Pause(3)
+        else:
+            print("You are not a dev.")
             print("YoU BRouGht ThiS UpoN YouRseLF.")
             TextMode = True
             funct.Pause(3)
-        elif Code == DEV_CODE:
-          Gold += 1000
-          print(" + 1000 gold!")
-          print(f"Your current balance is {Gold} gold.")
-        else:
-          print("You are not a dev.")
-          print("YoU BRouGht ThiS UpoN YouRseLF.")
-          TextMode = True
-          funct.Pause(3)
     else:
-      print("You are not a dev.")
-      print("YoU BRouGht ThiS UpoN YouRseLF.")
-      TextMode = True
-      funct.Pause(3)
+        print("You are not a dev.")
+        print("YoU BRouGht ThiS UpoN YouRseLF.")
+        TextMode = True
+        funct.Pause(3)
   elif Location == "f": # Code for the field
     Random = random.randint(1, 100)
     if Random <= 15  and "Tattered Map" not in Inventory and ForestDiscovered == False and FoundBones < 5:
