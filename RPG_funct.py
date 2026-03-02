@@ -5,9 +5,6 @@ import os
 
 load_dotenv()  # reads .env file
 DEV_CODE = os.getenv("KYROS_DEV_CODE")
-if DEV_CODE is None:
-    DEV_CODE = "IMPOSSIBLE-DEV-CODE-7x9zq2k8p"
-
 
 def CalcSellPrice(item, BasePrice, ShopStock):
   Base = BasePrice[item]
@@ -732,33 +729,39 @@ def ShopElya(Gold, Inventory, Choice, Idx, Name, ShopStock, BasePrice, item, Tex
           print(GamePrint(f"Your new balance is {Gold} Gold.", TextMode))
 
       elif Choice == "4":
-        if Name != "Jacob":
-          print("You are not a dev.")
-          print("YoU BRouGht ThiS UpoN YouRseLF.")
-          Pause(3)
-          TextMode = True
-        else:
-            Code = GameInput("Please enter the dev code. ", TextMode).strip()
-            if not Code:  # catches empty input or just spaces/enter
-                print("No code entered. Access denied.")
-                print("YoU BRouGht ThiS UpoN YouRseLF.")
-                TextMode = True
-                Pause(3)
-            elif Code == DEV_CODE:
-                if Gold < 1000:
-                    print(GamePrint(f"To buy this, you need {1000 - Gold} more Gold."))
-                else:
-                    print(GamePrint("Congratulations on your puchase. No refunds allowed.", TextMode))
-                    print(GamePrint("You have acquired Dev Sword for 1000 Gold", TextMode))
-                    Inventory.append("Dev Sword")
-                    Gold -= 1000
-                    print(GamePrint(" - 1000 Gold", TextMode))
-                    print(GamePrint(f"Your new balance is {Gold} Gold.", TextMode))
-            else:
+        if DEV_CODE is not None:
+            if Name != "Jacob":
                 print("You are not a dev.")
                 print("YoU BRouGht ThiS UpoN YouRseLF.")
-                TextMode = True
-                Pause
+                Pause(3)
+                    TextMode = True
+            else:
+                Code = GameInput("Please enter the dev code. ", TextMode).strip()
+                if not Code:  # catches empty input or just spaces/enter
+                    print("No code entered. Access denied.")
+                    print("YoU BRouGht ThiS UpoN YouRseLF.")
+                    TextMode = True
+                    Pause(3)
+                elif Code == DEV_CODE:
+                    if Gold < 1000:
+                        print(GamePrint(f"To buy this, you need {1000 - Gold} more Gold."))
+                    else:
+                        print(GamePrint("Congratulations on your puchase. No refunds allowed.", TextMode))
+                        print(GamePrint("You have acquired Dev Sword for 1000 Gold", TextMode))
+                        Inventory.append("Dev Sword")
+                        Gold -= 1000
+                        print(GamePrint(" - 1000 Gold", TextMode))
+                        print(GamePrint(f"Your new balance is {Gold} Gold.", TextMode))
+                else:
+                    print("You are not a dev.")
+                    print("YoU BRouGht ThiS UpoN YouRseLF.")
+                    TextMode = True
+                    Pause(3)
+        else:
+            print("You are not a dev.")
+            print("YoU BRouGht ThiS UpoN YouRseLF.")
+            TextMode = True
+            Pause(3)
       elif Choice == "5":
         while True:
           print(GamePrint("----INVENTORY----", TextMode))
@@ -768,8 +771,8 @@ def ShopElya(Gold, Inventory, Choice, Idx, Name, ShopStock, BasePrice, item, Tex
           try:
             Idx = int(GameInput("Which item do you want to sell? Please choose a number. ", TextMode)) - 1
           except ValueError:
-            print(GamePrint("Please enter a  number on the screen."))
-          if Idx == (len(Inventory) + 1):
+            print(GamePrint("Please enter a  number on the screen.", TextMode))
+          if Idx == len(Inventory):
             print(GamePrint("you have exited the sell menu.", TextMode))
             break
           elif 0 <= Idx < len(Inventory):
