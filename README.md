@@ -1,11 +1,17 @@
-
 # Kyros-RPG
-A text-based RPG set in the world of Kyros. Fight monsters, find loot, get rich, and become famous, or die unknown
+
+![Python](https://img.shields.io/badge/Python-3.x-blue)
+![Repo Size](https://img.shields.io/github/repo-size/Bookworm2012/Kyros-RPG)
+![Last Commit](https://img.shields.io/github/last-commit/Bookworm2012/Kyros-RPG)
+![License](https://img.shields.io/github/license/Bookworm2012/Kyros-RPG)
+
+A text-based RPG set in the world of Kyros. Fight monsters, find loot, get rich, and become famous . . . or die unknown
 
 ## How to Play
 1. Make sure you have Python 3 installed (https://www.python.org/downloads/)
-2. Download both `TextBasedRPG.py` and `RPG_funct.py` and put them in the same folder
-3. Open a terminal in that folder and run: python TextBasedRPG.py
+2. Download this repository
+3. Open the Game folder
+4. Open a terminal in that folder and run: python TextBasedRPG.py
 
 ## Features
 - Explore the town of Elya
