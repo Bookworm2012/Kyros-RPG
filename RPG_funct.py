@@ -65,7 +65,6 @@ def IntroText():
 def AskName(Name, TextMode):
   Name = input("Traveler, what would you like to be called in this new world? ")
 # Line 40 is asking what the player wants to be called
-  print("You open your eyes and look around. ")
   return Name
 
 def PerformAttack(attacker_atk, defender_def, defender_hp):
@@ -267,12 +266,12 @@ def SagesSecretStewTavern(Gold, Mana, MaxMana, Choice, Inventory, SagePrice, Tex
       print(GamePrint("Sage's Secret Stew has been added to your Inventory", TextMode))
       break
     else:
-      print("Please answer h or t.")
+      print(GamePrint("Please answer h or t.", TextMode))
   return Gold, Mana, MaxMana, Inventory
 
 def InventoryMenu(Idx, Choice, Inventory, Equipped, Mana, MaxMana,
 ManaRegenMultiplier, Health, MaxHealth, HealthRegenMultiplier, AtkPwr, Defense,
-BuffActive, BuffEndTime, Consumables, UnlockorCraft, TextMode):
+BuffActive, BuffEndTime, Consumables, UnlockorCraft, TextMode, SecretCode, RegisteredAdventurer):
   while True:
     print(GamePrint("  INVENTORY MENU", TextMode))
     print(GamePrint("=", TextMode) * 20)
@@ -293,12 +292,15 @@ BuffActive, BuffEndTime, Consumables, UnlockorCraft, TextMode):
           Idx = int(Choice) - 1
           if 0 <= Idx < len(Inventory):
             ItemName = Inventory[Idx]
-            Mana, MaxMana, Mana, ManaRegenMultiplier, Health, MaxHealth,
-            HealthRegenMultiplier, AtkPwr,
-            Defense, BuffActive, BuffEndTime,
-            Equipped, Inventory = EquipItem(ItemName, Mana, MaxMana, Health, MaxHealth,
-                                                        Equipped, Inventory, Consumables,
-                                                        UnlockorCraft, TextMode)
+            MaxMana, Mana, ManaRegenMultiplier, Health, MaxHealth,
+            HealthRegenMultiplier, AtkPwr, Defense, BuffActive, BuffEndTime,
+            Equipped, Inventory = EquipItem(ItemName, Mana, MaxMana,
+                            ManaRegenMultiplier, Health, MaxHealth,
+                            HealthRegenMultiplier, Equipped, Inventory,
+                            Consumables, UnlockorCraft, AtkPwr,
+                            Defense, BuffActive, BuffEndTime, TextMode,
+                            SecretCode, RegisteredAdventurer
+                            )
         else:
             print(GamePrint("Please enter a number.", TextMode))
     elif Choice == "2":
@@ -309,7 +311,7 @@ BuffActive, BuffEndTime, Consumables, UnlockorCraft, TextMode):
         for i, item in enumerate(Equipped):
           print(GamePrint(f"{i + 1}. {item}", TextMode))
           print(GamePrint(f"{len(Equipped) + 1}. Exit to previous menu", TextMode))
-        Choice = GameInput("Please select a number. ")
+        Choice = GameInput("Please select a number. ", TextMode)
         if Choice.isdigit():
           Idx = int(Choice) - 1
           if 0 <= Idx < len(Equipped):
@@ -329,7 +331,7 @@ BuffActive, BuffEndTime, Consumables, UnlockorCraft, TextMode):
 
 def EquipItem(ItemName, Mana, MaxMana, ManaRegenMultiplier, Health, MaxHealth,
 HealthRegenMultiplier, Equipped, Inventory, Consumables, UnlockorCraft, AtkPwr,
-Defense, BuffActive, BuffEndTime, TextMode):
+Defense, BuffActive, BuffEndTime, TextMode, SecretCode, RegisteredAdventurer):
   print(GamePrint(f"---- {ItemName} ----", TextMode))
   if ItemName == "Basic Health Potion":
     print(GamePrint("Description: A red liquid in a dented metal flask.", TextMode))
@@ -420,7 +422,7 @@ Defense, BuffActive, BuffEndTime, TextMode):
         elif ItemName == "Regular Dagger":
             AtkPwr = RegularDagger(AtkPwr, TextMode)
         elif ItemName == "Mysterious Letter":
-            MysteriousLetter(TextMode)
+            MysteriousLetter(SecretCode, TextMode)
         elif ItemName == "Slime Core":
             SlimeCore(TextMode)
         elif ItemName == "Vial of Slime":
@@ -428,7 +430,7 @@ Defense, BuffActive, BuffEndTime, TextMode):
         elif ItemName == "Wolf Fang":
             WolfFang(TextMode)
         elif ItemName == "Tattered Map":
-            TatteredMap(TextMode)
+            TatteredMap(RegisteredAdventurer, TextMode)
         if ItemName not in UnlockorCraft:
           print(GamePrint(f"Successfully used/equipped {ItemName}!", TextMode))
   return (MaxMana, Mana, ManaRegenMultiplier, Health, MaxHealth,
@@ -601,7 +603,7 @@ def WolfFang(TextMode):
 
 
 def BlacksmithShopElya(Gold, Inventory, Choice, TextMode):
-  while True:
+    while True:
             print(GamePrint(f"You have {Gold} Gold.", TextMode))
             if len(Inventory) == 0:
               print(GamePrint("Your Inventory is empty", TextMode))
@@ -652,7 +654,7 @@ def BlacksmithShopElya(Gold, Inventory, Choice, TextMode):
               elif Gold < 40:
                 print(GamePrint(f"Sorry, you don't have enough for that right now. Please get " +
                 f"{40 - Gold} more Gold.", TextMode))
-              elif Inventory.count("Wolf fang") < 1:
+              elif Inventory.count("Wolf Fang") < 1:
                 print(GamePrint(f"Sorry, you don't have enough for that right now. Please get " +
                 f"{1 - Inventory.count("Wolf fang")} more Wolf Fang(s).", TextMode))
               else:
@@ -673,7 +675,7 @@ def BlacksmithShopElya(Gold, Inventory, Choice, TextMode):
               print(GamePrint("You have left the Blacksmith. You no longer need a code to " +
               "enter.", TextMode))
               break
-            return Gold, Inventory, TextMode
+    return Gold, Inventory, TextMode
 
 def ShopElya(Gold, Inventory, Choice, Idx, Name, ShopStock, BasePrice, item, TextMode, Items):
   while True:
@@ -734,7 +736,7 @@ def ShopElya(Gold, Inventory, Choice, Idx, Name, ShopStock, BasePrice, item, Tex
                 print("You are not a dev.")
                 print("YoU BRouGht ThiS UpoN YouRseLF.")
                 Pause(3)
-                    TextMode = True
+                TextMode = True
             else:
                 Code = GameInput("Please enter the dev code. ", TextMode).strip()
                 if not Code:  # catches empty input or just spaces/enter
