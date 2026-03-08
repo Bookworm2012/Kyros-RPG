@@ -4,6 +4,7 @@ import time # Lets me check time
 from dotenv import load_dotenv
 import os
 
+
 load_dotenv()
 DEV_CODE = os.getenv("KYROS_DEV_CODE")
 TextMode = None
@@ -102,9 +103,10 @@ TextMode = (Name.lower() in Banned)
 if Name in Banned:
     print("YoU BRouGht ThiS UpoN YouRseLF.")
 print(funct.GamePrint(f"Welcome, {Name}, to the world of Kyros and to the town of Elya!", TextMode))
+print("You open your eyes and look around. ")
 while True:
   LastRegenTime, Health, Mana = funct.RegenerationCode(LastRegenTime,
-    Health, MaxHealth, HealthRegenMultiplier,
+    MaxHealth, Health, HealthRegenMultiplier,
     Mana, MaxMana, ManaRegenMultiplier, TextMode)
   if BuffActive == True and time.time() > BuffEndTime:
     print("The effect of the fish and chips has worn off! Stats return to normal.")
@@ -241,10 +243,15 @@ while True:
           break
       elif Choice == "i":
         (Inventory, Equipped, AtkPwr, Defense, MaxMana, Mana,
-        ManaRegenMultiplier, Health, MaxHealth, HealthRegenMultiplier, BuffActive,
-        BuffEndTime, Equipped) = funct.InventoryMenu(Idx, Choice, Inventory, Equipped,
-        Mana, MaxMana, ManaRegenMultiplier, Health, MaxHealth, HealthRegenMultiplier,
-        AtkPwr, Defense, BuffActive, BuffEndTime, Consumables, UnlockorCraft)
+  ManaRegenMultiplier, Health, MaxHealth, HealthRegenMultiplier, BuffActive,
+  BuffEndTime) = funct.InventoryMenu(Idx, Choice, Inventory,
+                                Equipped, Mana, MaxMana,
+                                ManaRegenMultiplier, Health, MaxHealth,
+                                HealthRegenMultiplier, AtkPwr, Defense,
+                                BuffActive, BuffEndTime, Consumables,
+                                UnlockorCraft, TextMode, SecretCode,
+                                RegisteredAdventurer
+                                )
       elif Choice == "r":
           print("You feel that the slime is too strong for you. You retreat back to " +
               "town.")
@@ -349,10 +356,13 @@ while True:
           print("Please enter yes or no.")
   elif Location == "i":
     (Inventory, Equipped, AtkPwr, Defense, MaxMana, Mana,
-    ManaRegenMultiplier, Health, MaxHealth, HealthRegenMultiplier, BuffActive,
-    BuffEndTime, Equipped) = funct.InventoryMenu(Idx, Choice, Inventory, Equipped,
-    MaxMana, Mana, ManaRegenMultiplier, Health, MaxHealth, HealthRegenMultiplier,
-    AtkPwr, Defense, BuffActive, BuffEndTime, Consumables, UnlockorCraft)
+  ManaRegenMultiplier, Health, MaxHealth, HealthRegenMultiplier, BuffActive,
+  BuffEndTime) = funct.InventoryMenu(Idx, Choice, Inventory, Equipped,
+                            Mana, MaxMana, ManaRegenMultiplier, Health,
+                            MaxHealth, HealthRegenMultiplier, AtkPwr, Defense,
+                            BuffActive, BuffEndTime, Consumables, UnlockorCraft,
+                            TextMode, SecretCode, RegisteredAdventurer
+                            )
 
 
 
