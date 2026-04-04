@@ -13,10 +13,8 @@ Owns:
 - News system (notice board + NPC dialogue delivery)
 - Guild bankruptcy / regional economic crisis
 - Player absence tracking → NPC gossip
-- Multiplayer server tick (TCP socket, separate process)
 - Shop transaction queue (per-shop, sequential)
 
-WorldSimulation runs as a separate process via run_server().
 Player game loops connect to it via TCP socket on port 7890.
 """
 
@@ -25,9 +23,7 @@ from __future__ import annotations
 import json
 import math
 import os
-import queue
 import random
-import socket
 import threading
 import time
 import urllib.request
@@ -61,9 +57,6 @@ NPC_TICK_INTERVAL        = 30          # NPC goals/schedule tick every 30 real s
 NEWS_EXPIRY              = NPC_DAY * 7 # news items expire after 7 NPC days
 NOTICE_BOARD_EXPIRY      = 60 * 60 * 24 * 14  # 2 real weeks
 
-SERVER_HOST              = "0.0.0.0"
-SERVER_PORT              = 7890
-MAX_CLIENTS              = 32
 
 BANDIT_ATTACK_CHANCE     = 0.08        # 8% per caravan tick
 MONSTER_ATTACK_CHANCE    = 0.05        # 5% per caravan tick
@@ -331,15 +324,6 @@ class RegionalEconomy:
         self.crisis = False
 
 
-@dataclass
-class ConnectedPlayer:
-    """A player currently connected to the multiplayer world."""
-    name:         str
-    location:     str
-    connected_at: float = field(default_factory=time.time)
-    socket:       object = None    # client socket reference
-    last_ping:    float  = field(default_factory=time.time)
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  WORLD SIMULATION
@@ -350,19 +334,16 @@ class WorldSimulation:
     The master world simulation for Kyros.
 
     Owns the master clock, all timers, NPC ticks, weather,
-    economy, caravans, news, and multiplayer server.
+    economy, caravans, news, and world events.
 
-    In multiplayer: runs as a separate process via run_server().
-    In single player: instantiated and driven by the game loop.
+    Instantiated and driven directly by the game loop.
     """
 
     def __init__(
         self,
         world_name:    str  = "Kyros",
-        is_multiplayer:bool = False,
     ):
         self.world_name    = world_name
-        self.is_multiplayer= is_multiplayer
 
         # ── Master clock ─────────────────────────────────────────────────
         self.start_time:     float = time.time()
@@ -404,24 +385,12 @@ class WorldSimulation:
             "elya": []
         }
 
-        # ── Shop queues ──────────────────────────────────────────────────
-        # Each shop has its own queue; transactions process one at a time
-        self.shop_queues:    dict[str, queue.Queue] = {}
-        self.shop_locks:     dict[str, threading.Lock] = {}
-
         # ── Player tracking ──────────────────────────────────────────────
-        self.connected_players: dict[str, ConnectedPlayer] = {}
         self.player_last_seen:  dict[str, float] = {}
         self.player_locations:  dict[str, str]   = {}
 
         # ── NPC tick ─────────────────────────────────────────────────────
         self._last_npc_tick: float = time.time()
-
-        # ── Server (multiplayer) ─────────────────────────────────────────
-        self._server_socket:   Optional[socket.socket] = None
-        self._server_thread:   Optional[threading.Thread] = None
-        self._client_threads:  list[threading.Thread] = []
-        self._running:         bool = False
 
         # ── Notifications queue (player name → list of messages) ─────────
         self._notifications:   dict[str, list[str]] = {}
@@ -1080,66 +1049,6 @@ class WorldSimulation:
         ))
         notifications.append(headline)
 
-    def queue_shop_transaction(
-        self,
-        player_name: str,
-        shop_name:   str,
-        action:      str,
-        item_name:   str,
-        quantity:    int,
-    ) -> str:
-        """
-        Queue a shop transaction. Returns a transaction ID.
-        Players queue for the same shop; different shops process independently.
-        """
-        if shop_name not in self.shop_queues:
-            self.shop_queues[shop_name] = queue.Queue()
-            self.shop_locks[shop_name]  = threading.Lock()
-
-        transaction = ShopTransaction(
-            player_name = player_name,
-            shop_name   = shop_name,
-            action      = action,
-            item_name   = item_name,
-            quantity     = quantity,
-        )
-        tx_id = f"tx_{shop_name}_{int(time.time())}_{random.randint(1000,9999)}"
-        self.shop_queues[shop_name].put((tx_id, transaction))
-
-        # Notify player they are queued
-        position = self.shop_queues[shop_name].qsize()
-        if position > 1:
-            self._notify_player(
-                player_name,
-                f"The shop is busy. You are #{position} in queue. Please wait."
-            )
-        return tx_id
-
-    def process_shop_queue(
-        self,
-        shop_name: str,
-        processor_fn,
-    ) -> None:
-        """
-        Process all queued transactions for a shop sequentially.
-        processor_fn(transaction) → list[str] of result messages.
-        """
-        if shop_name not in self.shop_queues:
-            return
-        lock = self.shop_locks[shop_name]
-        q    = self.shop_queues[shop_name]
-
-        def _process():
-            with lock:
-                while not q.empty():
-                    tx_id, transaction = q.get()
-                    results = processor_fn(transaction)
-                    self._notify_player(transaction.player_name, "\n".join(results))
-                    q.task_done()
-
-        thread = threading.Thread(target=_process, daemon=True)
-        thread.start()
-
 
     # ─────────────────────────────────────────────────────────────────────
     #  NEWS AND NOTICE BOARD
@@ -1440,31 +1349,6 @@ class WorldSimulation:
     #  PLAYER TRACKING
     # ─────────────────────────────────────────────────────────────────────
 
-    def player_connected(self, player_name: str, location: str) -> None:
-        self.connected_players[player_name] = ConnectedPlayer(
-            name=player_name, location=location
-        )
-        self.player_locations[player_name] = location
-
-    def player_disconnected(self, player_name: str) -> None:
-        self.player_last_seen[player_name]  = time.time()
-        self.player_locations[player_name]  = self.connected_players.get(
-            player_name, ConnectedPlayer("", "")
-        ).location
-        self.connected_players.pop(player_name, None)
-
-    def update_player_location(self, player_name: str, location: str) -> None:
-        if player_name in self.connected_players:
-            self.connected_players[player_name].location = location
-        self.player_locations[player_name] = location
-
-    def get_player_count(self) -> int:
-        return len(self.connected_players)
-
-    def is_world_active(self) -> bool:
-        """World simulation runs if at least one player is connected."""
-        return len(self.connected_players) > 0
-
 
     # ─────────────────────────────────────────────────────────────────────
     #  NOTIFICATIONS
@@ -1483,353 +1367,8 @@ class WorldSimulation:
             msgs = self._notifications.pop(player_name, [])
         return msgs
 
-    def notify_all(self, message: str) -> None:
-        for name in self.connected_players:
-            self._notify_player(name, message)
+    def notify_all(self, message: str, player_name: str = "") -> None:
+        """Notify the current player."""
+        if player_name:
+            self._notify_player(player_name, message)
 
-
-    # ─────────────────────────────────────────────────────────────────────
-    #  MULTIPLAYER SERVER
-    # ─────────────────────────────────────────────────────────────────────
-
-    def run_server(self) -> None:
-        """
-        Start the multiplayer server.
-        Binds to 0.0.0.0:7890.
-        Runs simulation tick in background thread.
-        Accepts client connections in main thread.
-        """
-        self._running = True
-
-        # Simulation tick thread
-        tick_thread = threading.Thread(
-            target = self._simulation_loop,
-            daemon = True,
-            name   = "SimulationLoop",
-        )
-        tick_thread.start()
-
-        # TCP server
-        self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self._server_socket.bind((SERVER_HOST, SERVER_PORT))
-        self._server_socket.listen(MAX_CLIENTS)
-        print(f"[Kyros Server] Listening on {SERVER_HOST}:{SERVER_PORT}")
-
-        try:
-            while self._running:
-                try:
-                    client_sock, addr = self._server_socket.accept()
-                    client_thread = threading.Thread(
-                        target = self._handle_client,
-                        args   = (client_sock, addr),
-                        daemon = True,
-                    )
-                    client_thread.start()
-                    self._client_threads.append(client_thread)
-                except OSError:
-                    break
-        finally:
-            self._server_socket.close()
-
-    def stop_server(self) -> None:
-        self._running = False
-        if self._server_socket:
-            self._server_socket.close()
-
-    def _simulation_loop(self) -> None:
-        """Background thread: runs tick every second if world is active."""
-        while self._running:
-            if self.is_world_active():
-                notifications = self.tick()
-                for msg in notifications:
-                    self.notify_all(msg)
-            time.sleep(1.0)
-
-    def _handle_client(self, client_sock: socket.socket, addr: tuple) -> None:
-        """
-        Handle a connected player client.
-
-        Protocol: newline-delimited JSON messages.
-        Each message: {"action": "...", "payload": {...}}
-        Response:     {"ok": true/false, "data": {...}, "notifications": [...]}
-        """
-        player_name = None
-        try:
-            client_sock.settimeout(60.0)
-            buf = ""
-            while self._running:
-                try:
-                    chunk = client_sock.recv(4096).decode("utf-8")
-                    if not chunk:
-                        break
-                    buf += chunk
-                    while "\n" in buf:
-                        line, buf = buf.split("\n", 1)
-                        line = line.strip()
-                        if not line:
-                            continue
-                        try:
-                            msg = json.loads(line)
-                        except json.JSONDecodeError:
-                            continue
-                        response, player_name = self._handle_message(
-                            msg, player_name, client_sock
-                        )
-                        client_sock.sendall(
-                            (json.dumps(response) + "\n").encode("utf-8")
-                        )
-                except socket.timeout:
-                    # Send ping; check if player still connected
-                    try:
-                        ping = json.dumps({"action": "ping"}) + "\n"
-                        client_sock.sendall(ping.encode("utf-8"))
-                    except OSError:
-                        break
-        finally:
-            if player_name:
-                self.player_disconnected(player_name)
-                print(f"[Kyros Server] {player_name} disconnected from {addr}")
-            client_sock.close()
-
-    def _handle_message(
-        self,
-        msg:         dict,
-        player_name: Optional[str],
-        client_sock: socket.socket,
-    ) -> tuple[dict, Optional[str]]:
-        """
-        Process a client message. Returns (response_dict, updated_player_name).
-
-        Actions:
-        - connect:            player joins world
-        - disconnect:         player leaves world
-        - update_location:    player moved
-        - poll:               get pending notifications
-        - shop_transaction:   queue a shop transaction
-        - post_notice:        post to notice board
-        - get_notice_board:   read the notice board
-        - tick_request:       single player requests a manual tick
-        """
-        action  = msg.get("action", "")
-        payload = msg.get("payload", {})
-        notifs  = []
-
-        if action == "connect":
-            player_name = payload.get("player_name", "Unknown")
-            location    = payload.get("location", "elya")
-            self.player_connected(player_name, location)
-            # Deliver any pending notifications from while they were offline
-            notifs = self.poll_notifications(player_name)
-            print(f"[Kyros Server] {player_name} connected from {client_sock.getpeername()}")
-            return {"ok": True, "data": {"welcome": True}, "notifications": notifs}, player_name
-
-        if action == "disconnect":
-            if player_name:
-                self.player_disconnected(player_name)
-            return {"ok": True, "data": {}, "notifications": []}, None
-
-        if action == "update_location":
-            if player_name:
-                self.update_player_location(player_name, payload.get("location", ""))
-            return {"ok": True, "data": {}, "notifications": []}, player_name
-
-        if action == "poll":
-            if player_name:
-                notifs = self.poll_notifications(player_name)
-            return {"ok": True, "data": {}, "notifications": notifs}, player_name
-
-        if action == "shop_transaction":
-            tx_id = self.queue_shop_transaction(
-                player_name = player_name or "unknown",
-                shop_name   = payload.get("shop_name", ""),
-                action      = payload.get("tx_action", "buy"),
-                item_name   = payload.get("item_name", ""),
-                quantity    = int(payload.get("quantity", 1)),
-            )
-            return {"ok": True, "data": {"tx_id": tx_id}, "notifications": []}, player_name
-
-        if action == "post_notice":
-            success, msg_text = self.post_notice(
-                player_name = player_name or "unknown",
-                location    = payload.get("location", "elya"),
-                content     = payload.get("content", ""),
-                gold_cost   = float(payload.get("gold_cost", 10.0)),
-                anonymous   = bool(payload.get("anonymous", False)),
-            )
-            return {"ok": success, "data": {"message": msg_text}, "notifications": []}, player_name
-
-        if action == "get_notice_board":
-            board = self.get_notice_board(
-                location    = payload.get("location", "elya"),
-                player_name = player_name,
-            )
-            return {"ok": True, "data": {"board": board}, "notifications": []}, player_name
-
-        if action == "trigger_fantasy_weather":
-            notifs = self.trigger_fantasy_weather(
-                region       = payload.get("region", "elya"),
-                weather_type = payload.get("weather_type", "magical_storm"),
-                duration     = float(payload.get("duration", NPC_HOUR)),
-                source       = payload.get("source", player_name or "unknown"),
-            )
-            return {"ok": True, "data": {}, "notifications": notifs}, player_name
-
-        if action == "tick_request":
-            # Single player manual tick
-            notifs = self.tick()
-            return {"ok": True, "data": {}, "notifications": notifs}, player_name
-
-        if action == "get_weather":
-            region  = payload.get("region", "elya")
-            weather = self.get_weather(region)
-            return {"ok": True, "data": {
-                "type":        weather.active_type,
-                "temperature": weather.temperature,
-                "combat_mods": weather.combat_modifiers,
-            }, "notifications": []}, player_name
-
-        if action == "ping":
-            if player_name:
-                cp = self.connected_players.get(player_name)
-                if cp:
-                    cp.last_ping = time.time()
-            return {"ok": True, "data": {"pong": True}, "notifications": []}, player_name
-
-        return {"ok": False, "data": {"error": f"Unknown action: {action}"},
-                "notifications": []}, player_name
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-#  SERVER CLIENT HELPER (used by game loop to talk to the server)
-# ─────────────────────────────────────────────────────────────────────────────
-
-class WorldClient:
-    """
-    Thin client for the game loop to communicate with WorldSimulation server.
-    Used in multiplayer. In single player, game loop calls WorldSimulation directly.
-    """
-
-    def __init__(self, host: str = "127.0.0.1", port: int = SERVER_PORT):
-        self.host   = host
-        self.port   = port
-        self._sock  = None
-        self._buf   = ""
-        self._lock  = threading.Lock()
-
-    def connect(self, player_name: str, location: str) -> dict:
-        self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._sock.connect((self.host, self.port))
-        return self._send({"action": "connect", "payload": {
-            "player_name": player_name, "location": location
-        }})
-
-    def disconnect(self) -> None:
-        if self._sock:
-            try:
-                self._send({"action": "disconnect", "payload": {}})
-            except Exception:
-                pass
-            self._sock.close()
-            self._sock = None
-
-    def poll(self) -> list[str]:
-        resp = self._send({"action": "poll", "payload": {}})
-        return resp.get("notifications", [])
-
-    def update_location(self, location: str) -> None:
-        self._send({"action": "update_location", "payload": {"location": location}})
-
-    def get_weather(self, region: str = "elya") -> dict:
-        resp = self._send({"action": "get_weather", "payload": {"region": region}})
-        return resp.get("data", {})
-
-    def get_notice_board(self, location: str) -> str:
-        resp = self._send({"action": "get_notice_board",
-                           "payload": {"location": location}})
-        return resp.get("data", {}).get("board", "")
-
-    def post_notice(
-        self,
-        location:  str,
-        content:   str,
-        gold_cost: float = 10.0,
-        anonymous: bool  = False,
-    ) -> tuple[bool, str]:
-        resp = self._send({"action": "post_notice", "payload": {
-            "location": location, "content": content,
-            "gold_cost": gold_cost, "anonymous": anonymous,
-        }})
-        return resp.get("ok", False), resp.get("data", {}).get("message", "")
-
-    def shop_transaction(
-        self,
-        shop_name: str,
-        action:    str,
-        item_name: str,
-        quantity:  int = 1,
-    ) -> str:
-        resp = self._send({"action": "shop_transaction", "payload": {
-            "shop_name": shop_name, "tx_action": action,
-            "item_name": item_name, "quantity": quantity,
-        }})
-        return resp.get("data", {}).get("tx_id", "")
-
-    def trigger_fantasy_weather(
-        self,
-        region:       str,
-        weather_type: str,
-        duration:     float,
-        source:       str = "player",
-    ) -> list[str]:
-        resp = self._send({"action": "trigger_fantasy_weather", "payload": {
-            "region": region, "weather_type": weather_type,
-            "duration": duration, "source": source,
-        }})
-        return resp.get("notifications", [])
-
-    def tick(self) -> list[str]:
-        """Single player tick request."""
-        resp = self._send({"action": "tick_request", "payload": {}})
-        return resp.get("notifications", [])
-
-    def _send(self, msg: dict) -> dict:
-        with self._lock:
-            if not self._sock:
-                return {}
-            try:
-                self._sock.sendall((json.dumps(msg) + "\n").encode("utf-8"))
-                self._sock.settimeout(10.0)
-                while "\n" not in self._buf:
-                    chunk = self._sock.recv(4096).decode("utf-8")
-                    if not chunk:
-                        return {}
-                    self._buf += chunk
-                line, self._buf = self._buf.split("\n", 1)
-                return json.loads(line.strip())
-            except Exception:
-                return {}
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-#  ENTRY POINT (run as server process)
-# ─────────────────────────────────────────────────────────────────────────────
-
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser(description="Kyros World Simulation Server")
-    parser.add_argument("--world",  default="Kyros",   help="World name")
-    parser.add_argument("--host",   default="0.0.0.0", help="Bind host")
-    parser.add_argument("--port",   default=7890, type=int, help="Bind port")
-    args = parser.parse_args()
-
-    SERVER_HOST = args.host
-    SERVER_PORT = args.port
-
-    sim = WorldSimulation(world_name=args.world, is_multiplayer=True)
-    print(f"[Kyros Server] Starting world '{args.world}'")
-    try:
-        sim.run_server()
-    except KeyboardInterrupt:
-        print("\n[Kyros Server] Shutting down.")
-        sim.stop_server()
