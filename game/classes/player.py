@@ -3,7 +3,7 @@ kyros/player.py
 Player class. Inherits from Enlightened (or NotEnlightened if race changes).
 Handles all player-specific systems: inventory, journal, status menu,
 aliases, save codes, respawn, bond pets, map notes, achievements,
-reputation, wanted level, guild membership, and multiplayer state.
+reputation, wanted level, and guild membership.
 """
 
 from __future__ import annotations
@@ -40,7 +40,6 @@ ITEM_DESPAWN_TIMER   = 3600       # real seconds before dropped items despawn
 BOND_PET_SAPIENT_GRADE = 2        # grade index where bond pets become sapient (C = index 4, adjusted below)
 BOND_SAPIENT_GRADE_IDX = 4        # C grade index in GRADE_NAMES
 RESURRECT_MANA_PER_LVL= 50        # mana cost to resurrect = level * 50
-PVP_DISCONNECT_WIN   = True       # disconnecting from PvP counts as a loss
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -248,7 +247,6 @@ def generate_save_code(
     - 1 digit
     - 1 symbol from }[&#(%
 
-    Single player only — multiplayer uses server-side state.
     """
     def make_random_sequence() -> str:
         symbols  = "}[&#(%"
@@ -321,14 +319,12 @@ class Player(Enlightened):
     - Guild memberships
     - Gossip list
     - Relationships (hidden from NPCs)
-    - Multiplayer state
-    """
+        """
 
     def __init__(
         self,
         name:         str,
         race:         str  = "human",
-        is_multiplayer: bool = False,
         world_name:   str  = "Kyros",
     ):
         super().__init__(name, race, is_player=True)
@@ -384,11 +380,8 @@ class Player(Enlightened):
         self.bounties_on_self:  list[Bounty]  = []
         self.sentence:      Optional[Sentence]= None
 
-        # ── Multiplayer ──────────────────────────────────────────────────
-        self.is_multiplayer: bool = is_multiplayer
+        # ── World ────────────────────────────────────────────────────────
         self.world_name:     str  = world_name
-        self.in_pvp:         bool = False
-        self.pvp_opponent:   Optional[str] = None
 
         # ── Hardcoded achievement trackers ───────────────────────────────
         self._monsters_killed:  int = 0
@@ -513,10 +506,6 @@ class Player(Enlightened):
             f"You respawn at {self.active_respawn}."
         )
 
-        # PvP disconnect rule — if opponent disconnected, they lose
-        if self.in_pvp:
-            self.in_pvp       = False
-            self.pvp_opponent = None
 
         self._check_hardcoded_achievements()
         return notifications
@@ -854,11 +843,8 @@ class Player(Enlightened):
     def save(self, prompt_context: str = "") -> str:
         """
         Generate a save code capturing full world state.
-        Single player only — multiplayer uses server-side persistence.
         Returns the save code string.
         """
-        if self.is_multiplayer:
-            return "Save codes are not available in multiplayer."
 
         if prompt_context:
             self.last_prompt = prompt_context
@@ -1317,22 +1303,7 @@ class Player(Enlightened):
         return []
 
 
-    # ─────────────────────────────────────────────────────────────────────
-    #  MULTIPLAYER
-    # ─────────────────────────────────────────────────────────────────────
 
-    def start_pvp(self, opponent_name: str) -> list[str]:
-        self.in_pvp       = True
-        self.pvp_opponent = opponent_name
-        return [f"PvP started against {opponent_name}."]
-
-    def end_pvp(self, disconnected: bool = False) -> list[str]:
-        opponent = self.pvp_opponent
-        self.in_pvp       = False
-        self.pvp_opponent = None
-        if disconnected and PVP_DISCONNECT_WIN:
-            return [f"{opponent} disconnected. You win the PvP."]
-        return ["PvP ended."]
 
 
     # ─────────────────────────────────────────────────────────────────────
