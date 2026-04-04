@@ -116,7 +116,7 @@ def ShopElya(Gold, Inventory, Choice, Idx, Name, ShopStock, BasePrice, item, Tex
             break
           elif 0 <= Idx < len(Inventory):
             item = Inventory[Idx]
-            Inventory, ShopStock, Gold = SellItem(item, ShopStock, Gold, BasePrice, Inventory, TextMode)
+            Shopstock, Inventory, Gold = SellItem(item, ShopStock, Gold, BasePrice, Inventory, TextMode)
             break
           else:
             print(GamePrint("Invalid Input.", TextMode))
