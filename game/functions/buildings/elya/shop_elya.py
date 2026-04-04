@@ -1,4 +1,4 @@
-from dotenv import load_dotenvv
+from dotenv import load_dotenv
 import os
 from ...utils import (
                         GamePrint,
