@@ -1,4 +1,3 @@
-# test
 from .utils import (
                     GamePrint,
                     GameInput,
