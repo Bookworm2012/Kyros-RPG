@@ -2,3 +2,9 @@ from .character import *
 from .player import *
 from .npc import *
 from .npc_objects import *
+from .quest import *
+from .evolution import *
+from .magic import *
+from .combat import *
+from .world_simulation import *
+from .guild import *
