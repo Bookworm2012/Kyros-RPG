@@ -11,6 +11,9 @@ def CalcSellPrice(item, BasePrice, ShopStock):
   return FinalPrice
 
 def SellItem(item, ShopStock, Gold, BasePrice, Inventory, TextMode):
+    if item == "Dev Sword":
+        print("You cannot sell that item.")
+        return Shopstock, Inventory, Gold
     if item not in Inventory:
       print(GamePrint("You don't have that item.", TextMode))
       return
