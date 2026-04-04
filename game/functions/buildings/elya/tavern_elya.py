@@ -1,4 +1,4 @@
-from ...utils import (v
+from ...utils import (
                         GamePrint,
                         GameInput
                         )
