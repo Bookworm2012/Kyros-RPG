@@ -2,6 +2,25 @@ import time
 import random
 import inspect
 import sys
+from .items_inventory import (BasicHealthPotion,
+                                FishAndChipsInventory,
+                                PhoenixTearsInventory,
+                                SagesSecretStewInventory,
+                                BroccoliCheddarSoupInventory,
+                                ButterbeerInventory,
+                                BreadInventory,
+                                WaterInventory,
+                                DevSword,
+                                SmallDagger,
+                                BasicArmor,
+                                RegularArmor,
+                                RegularDagger,
+                                MysteriousLetter,
+                                SlimeCore,
+                                VialOfSlime,
+                                WolfFang,
+                                TatteredMap
+                                )
 
 def CalcSellPrice(item, BasePrice, ShopStock):
   Base = BasePrice[item]
@@ -13,7 +32,7 @@ def CalcSellPrice(item, BasePrice, ShopStock):
 def SellItem(item, ShopStock, Gold, BasePrice, Inventory, TextMode):
     if item == "Dev Sword":
         print("You cannot sell that item.")
-        return Shopstock, Inventory, Gold
+        return ShopStock, Inventory, Gold
     if item not in Inventory:
       print(GamePrint("You don't have that item.", TextMode))
       return
@@ -244,17 +263,4 @@ def GameInput(prompt, TextMode):
         return input(TextToBF("> "))
     else:
         return input(prompt)
-
-
-def get_my_definitions():
-    # Gets all functions AND classes in the current module, excluding imports
-    return [
-        obj for name, obj in inspect.getmembers(sys.modules[__name__])
-        if (inspect.isfunction(obj) or inspect.isclass(obj))
-        and obj.__module__ == __name__
-    ]
-
-# Example usage
-all_definitions = get_my_definitions()
-
 

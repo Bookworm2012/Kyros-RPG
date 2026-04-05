@@ -2,13 +2,6 @@ from .utils import (
                     Pause
                     )
 
-from dotenv import load_dotenv
-import os
-
-load_dotenv()  # reads .env file
-DEV_CODE = os.getenv("KYROS_DEV_CODE")
-
-
 def IntroText():
   print("///////////////")
   print("///////////////")
