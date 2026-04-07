@@ -3,6 +3,9 @@
 		{
 			"name": "Kyros-RPG",
 			"path": "."
+		},
+		{
+			"path": "../Kyros-RPG-Dev"
 		}
 	],
 	"settings": {}
