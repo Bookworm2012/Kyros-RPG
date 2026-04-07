@@ -20,7 +20,7 @@ import datetime as dt
 from dotenv import load_dotenv
 import os
 current_dir = os.path.dirname(os.path.abspath(__file__))
-dotenv_path = os.path.join(current_dir, 'functions', 'buildings', '.env')
+dotenv_path = os.path.join(current_dir, '.env')
 load_dotenv(dotenv_path)
 DEV_CODE = os.getenv("KYROS_DEV_CODE")
 TextMode = None
@@ -121,7 +121,7 @@ if Name in Banned:
 print(GamePrint(f"Welcome, {Name}, to the world of Kyros and to the town of Elya!", TextMode))
 print("You open your eyes and look around. ")
 while True:
-  LastRegenTime, Health, Mana = RegenerationCode(LastRegenTime,
+  LastRegenTime,  Health, Mana = RegenerationCode(LastRegenTime,
     MaxHealth, Health, HealthRegenMultiplier,
     Mana, MaxMana, ManaRegenMultiplier, TextMode)
   if BuffActive == True and time.time() > BuffEndTime:

@@ -8,7 +8,8 @@ from ...utils import (
                         )
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
-dotenv_path = os.path.join(current_dir, 'functions', 'buildings', '.env')
+dotenv_path = os.path.join(current_dir, '..', '..', '..', '.env')
+
 
 load_dotenv(dotenv_path)
 DEV_CODE = os.getenv("KYROS_DEV_CODE")
