@@ -50,7 +50,7 @@ Consumables = {"Elya": ["Basic Health Potion", "Fish and Chips", "Phoenix Tears"
                         "Bread", "Water", "Mysterious Letter",
                         "Tattered Map"]
               }# Has all consumable items in the game
-UnlockorCraft = {"Elya": ["Slime Core", "Vial of Slime", "Wolf Fang", "Mysterious Letter", "Tattered Map"]
+unlock_or_craft = {"Elya": ["Slime Core", "Vial of Slime", "Wolf Fang", "Mysterious Letter", "Tattered Map"]
                 }
 item = None
 Inventory = [] # Contain items
@@ -265,7 +265,7 @@ while True:
                                 ManaRegenMultiplier, Health, MaxHealth,
                                 HealthRegenMultiplier, AtkPwr, Defense,
                                 BuffActive, BuffEndTime, Consumables,
-                                UnlockorCraft, TextMode, SecretCode,
+                                unlock_or_craft, TextMode, SecretCode,
                                 RegisteredAdventurer
                                 )
       elif Choice == "r":
@@ -376,7 +376,7 @@ while True:
   BuffEndTime) = InventoryMenu(Idx, Choice, Inventory, Equipped,
                             Mana, MaxMana, ManaRegenMultiplier, Health,
                             MaxHealth, HealthRegenMultiplier, AtkPwr, Defense,
-                            BuffActive, BuffEndTime, Consumables, UnlockorCraft,
+                            BuffActive, BuffEndTime, Consumables, unlock_or_craft,
                             TextMode, SecretCode, RegisteredAdventurer
                             )
 
