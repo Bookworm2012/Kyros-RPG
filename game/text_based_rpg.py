@@ -16,7 +16,7 @@ from functions import (
 
 import random # Lets me generate random numbers
 import time # Lets me check time
-import datetime as dt
+# import datetime as dt
 from dotenv import load_dotenv
 import os
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -66,7 +66,7 @@ QuestsActive = []
 QuestsCompleted = 0 # Missions completed.
 Gold = 0 # Used to purchase stuff
 Race = "human" # Added this for later functionality of race changes
-Magic = [] # Set of avalible spells
+Magic = [] # Set of available spells
 AtkPwr = 5 # Base attack power if enemy has 0 defense
 Defense = 2 # Damaged blocked from incoming attacks
 SlimeStats = {"SlimeAtkPwr": random.randint(4, 7),
@@ -123,8 +123,8 @@ print("You open your eyes and look around. ")
 while True:
   LastRegenTime,  Health, Mana = RegenerationCode(LastRegenTime,
     MaxHealth, Health, HealthRegenMultiplier,
-    Mana, MaxMana, ManaRegenMultiplier, TextMode)
-  if BuffActive == True and time.time() > BuffEndTime:
+    MaxMana, Mana, ManaRegenMultiplier, TextMode)
+  if BuffActive and time.time() > BuffEndTime:
     print("The effect of the fish and chips has worn off! Stats return to normal.")
     print(" - 2 AtkPwr")
     AtkPwr -= 2
@@ -175,7 +175,7 @@ while True:
         Pause(3)
   elif Location == "f": # Code for the field
     Random = random.randint(1, 100)
-    if Random <= 15  and "Tattered Map" not in Inventory and ForestDiscovered == False and FoundBones < 5:
+    if Random <= 15  and "Tattered Map" not in Inventory and not ForestDiscovered  and FoundBones < 5:
       # make 0% = <= 15.
       print("While exploring, you come across a pile of bones. You open the satchel on the bones, and find " +
             "a Tattered Map, 2 Slime Cores, and 50 Gold.")
@@ -223,13 +223,13 @@ while True:
                                         Gold
                                         )
           Random = random.randint(1,10)
-          if "Mysterious Letter" in Inventory and BlacksmithUnlocked == False and DisplayedMessage == False:
+          if "Mysterious Letter" in Inventory and not BlacksmithUnlocked and not DisplayedMessage:
             DisplayedMessage = True
             SecretCode = random.randint(1000,9999)
             print("You have obtained a Mysterious Letter")
-            print(f"You read the letter: It says, Dear Residents of Elya. You must ")
+            print("You read the letter: It says, Dear Residents of Elya. You must ")
             Pause(0.5)
-            print(f"tell me the code to talk to me so that only people I trust ")
+            print("tell me the code to talk to me so that only people I trust ")
             Pause(0.5)
             print(f"can buy my wares. The code is {SecretCode}.")
           if Health < MaxHealth:
@@ -290,10 +290,10 @@ while True:
       Name, ShopStock, BasePrice, item, TextMode, Items)
 
   elif Location == "b":
-    if BlacksmithUnlocked == True:
+    if BlacksmithUnlocked:
             Gold, Inventory, TextMode = BlacksmithShopElya(Gold, Inventory, Choice, TextMode)
 
-    if BlacksmithUnlocked == False and "Mysterious Letter" not in Inventory:
+    if not BlacksmithUnlocked and "Mysterious Letter" not in Inventory:
       Random = random.randint(1,3)
       if (Random == 2 or Random == 3) and "Mysterious Letter" not in Inventory:
         print("Go away. I want to be left alone.")
@@ -317,7 +317,7 @@ while True:
     BuffActive, BuffEndTime, TextMode)
 
   elif Location == "a":
-    if RegisteredAdventurer == True:
+    if RegisteredAdventurer:
       print("You walk into the building and immediatly head to the quests room.")
       QuestsActive, QuestsCompleted, TakenStarterQuest = AdventurersGuild(RegisteredAdventurer,
       Rank, QuestsCompleted, MonstersKilled, TakenStarterQuest, Magic, Gold,
