@@ -6,6 +6,13 @@
 		},
 		{
 			"path": "../Kyros-RPG-Dev"
+		},
+		{
+			"path": "../Kyros-RPG-Pygame"
+		},
+		{
+			"name": "jacob-morgan-website",
+			"path": "../jacob-morgan-website"
 		}
 	],
 	"settings": {
@@ -19,6 +26,7 @@
 			"Unequipping",
 		],
 		"files.autoSave": "afterDelay",
-		"files.autoSaveDelay": 1000
+		"files.autoSaveDelay": 1000,
+		"liveServer.settings.multiRootWorkspaceName": "jacob-morgan-website"
 	}
 }
