@@ -17,13 +17,14 @@
 	],
 	"settings": {
 		"cSpell.words": [
-			"dotenv",
-			"Kyros",
-			"Elya",
-			"Regen",
 			"Butterbeer",
+			"dotenv",
+			"Elya",
+			"jacobmorgan",
+			"Kyros",
+			"Regen",
 			"Unequip",
-			"Unequipping",
+			"Unequipping"
 		],
 		"files.autoSave": "afterDelay",
 		"files.autoSaveDelay": 1000,
