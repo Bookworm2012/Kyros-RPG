@@ -13,6 +13,10 @@
 		{
 			"name": "jacob-morgan-website",
 			"path": "../jacob-morgan-website"
+		},
+		{
+			"name": "minecraft_cannon_v1",
+			"path": "../minecraft_cannon_v1"
 		}
 	],
 	"settings": {
